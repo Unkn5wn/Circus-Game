@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catching Circus Animals</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Animated background circles */
+    .bg-circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      animation: float 20s infinite ease-in-out;
+    }
+
+    .bg-circle:nth-child(1) {
+      width: 300px;
+      height: 300px;
+      top: -100px;
+      left: -100px;
+      animation-delay: 0s;
+    }
+
+    .bg-circle:nth-child(2) {
+      width: 200px;
+      height: 200px;
+      top: 50%;
+      right: -80px;
+      animation-delay: 5s;
+    }
+
+    .bg-circle:nth-child(3) {
+      width: 250px;
+      height: 250px;
+      bottom: -100px;
+      left: 30%;
+      animation-delay: 10s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.9); }
+    }
+
+    /* Container styles */
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Screen container */
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    /* Title animations */
+    .title {
+      font-size: 72px;
+      color: white;
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .subtitle {
+      font-size: 24px;
+      color: rgba(255, 255, 255, 0.9);
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    /* Button styles */
+    .menu-button {
+      width: 100%;
+      padding: 20px;
+      margin: 10px 0;
+      font-size: 24px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+
+    .menu-button:hover,
+    .menu-button.selected {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: #4ade80;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+      transform: translateY(-2px);
+    }
+
+    /* Game canvas */
+    #gameCanvas {
+      display: block;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    /* HUD elements */
+    .hud {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      z-index: 10;
+    }
+
+    #scoreHUD {
+      top: 10px;
+      left: 10px;
+    }
+
+    #timerHUD {
+      top: 10px;
+      right: 10px;
+    }
+
+    #caughtHUD {
+      top: 60px;
+      left: 10px;
+    }
+
+    #levelHUD {
+      top: 60px;
+      right: 10px;
+    }
+
+    #musicIndicator {
+      bottom: 10px;
+      left: 10px;
+      font-size: 16px;
+    }
+
+    #controllerIndicator {
+      bottom: 50px;
+      left: 10px;
+      font-size: 16px;
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-title {
+      font-size: 48px;
+      margin-bottom: 20px;
+      color: #667eea;
+    }
+
+    .modal-text {
+      font-size: 24px;
+      margin: 20px 0;
+      color: #333;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 15px;
+      font-size: 20px;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .modal-button {
+      padding: 15px 30px;
+      font-size: 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+
+    .modal-button.primary {
+      background: #4ade80;
+      color: white;
+    }
+
+    .modal-button.primary:hover {
+      background: #22c55e;
+      transform: scale(1.05);
+    }
+
+    .modal-button.secondary {
+      background: #667eea;
+      color: white;
+    }
+
+    .modal-button.secondary:hover {
+      background: #5568d3;
+      transform: scale(1.05);
+    }
+
+    /* Leaderboard styles */
+    .leaderboard-grid {
+      display: grid;
+      grid-template-columns: 80px 1fr 120px;
+      gap: 15px;
+      margin: 30px 0;
+      color: white;
+    }
+
+    .leaderboard-header {
+      font-weight: bold;
+      font-size: 20px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .leaderboard-cell {
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 18px;
+    }
+
+    .leaderboard-cell.rank {
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .leaderboard-cell.score {
+      text-align: right;
+    }
+
+    .leaderboard-cell.gold {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      color: #333;
+    }
+
+    .leaderboard-cell.silver {
+      background: linear-gradient(135deg, #C0C0C0, #808080);
+      color: #333;
+    }
+
+    .leaderboard-cell.bronze {
+      background: linear-gradient(135deg, #CD7F32, #8B4513);
+      color: white;
+    }
+
+    /* Options menu */
+    .options-card {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      padding: 20px;
+      margin: 15px 0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: white;
+      font-size: 24px;
+    }
+
+    .options-card:hover,
+    .options-card.selected {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: #4ade80;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+    }
+
+    /* Volume controls */
+    .volume-control {
+      margin: 30px 0;
+      color: white;
+    }
+
+    .volume-label {
+      font-size: 24px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .volume-slider {
+      width: 100%;
+      height: 10px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.3);
+      outline: none;
+      margin: 15px 0;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: #4ade80;
+      cursor: pointer;
+    }
+
+    .volume-slider::-moz-range-thumb {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: #4ade80;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Controller selection */
+    .controller-option {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      padding: 20px;
+      margin: 15px 0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: white;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+    }
+
+    .controller-option input[type="radio"] {
+      margin-right: 15px;
+      width: 25px;
+      height: 25px;
+    }
+
+    .controller-option.selected {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: #4ade80;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+    }
+
+    /* Back button */
+    .back-button {
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      color: white;
+      padding: 15px 30px;
+      font-size: 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 30px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .back-button:hover,
+    .back-button.selected {
+      background: rgba(0, 0, 0, 0.7);
+      border-color: #4ade80;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+      transform: translateY(-2px);
+    }
+
+    /* Test button */
+    .test-button {
+      padding: 10px 20px;
+      margin-left: 10px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .test-button:hover {
+      background: #5568d3;
+      transform: scale(1.05);
+    }
+
+    /* Save settings button */
+    .save-button {
+      width: 100%;
+      padding: 20px;
+      margin-top: 20px;
+      font-size: 24px;
+      background: #4ade80;
+      border: none;
+      border-radius: 15px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+
+    .save-button:hover,
+    .save-button.selected {
+      background: #22c55e;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+      transform: translateY(-2px);
+    }
+
+    h2 {
+      color: white;
+      font-size: 48px;
+      text-align: center;
+      margin-bottom: 30px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated background circles -->
+  <div class="bg-circle"></div>
+  <div class="bg-circle"></div>
+  <div class="bg-circle"></div>
+
+  <!-- Main Menu Screen -->
+  <div id="mainMenu" class="screen active container">
+    <h1 class="title">🎪 Catching Circus Animals 🎪</h1>
+    <p class="subtitle">Press Start to Begin</p>
+    <button class="menu-button selected" onclick="startGame()">Start Game</button>
+    <button class="menu-button" onclick="showLeaderboard()">Leaderboard</button>
+    <button class="menu-button" onclick="showOptionsMenu()">Options</button>
+    <button class="menu-button" onclick="showCredits()">Credits</button>
+    <button class="menu-button" onclick="confirmExit()">Exit</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="gameScreen" class="screen container" style="position: relative;">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="scoreHUD" class="hud">Score: 0</div>
+    <div id="timerHUD" class="hud">Time: 60</div>
+    <div id="caughtHUD" class="hud">Caught: 0</div>
+    <div id="levelHUD" class="hud">Level: 1</div>
+    <div id="musicIndicator" class="hud" style="display: none;">🎵 Music Playing</div>
+    <div id="controllerIndicator" class="hud" style="display: none;">🎮 Controller Connected</div>
+  </div>
+
+  <!-- Leaderboard Screen -->
+  <div id="leaderboardScreen" class="screen container">
+    <h2>🏆 Leaderboard 🏆</h2>
+    <div class="leaderboard-grid">
+      <div class="leaderboard-header">Rank</div>
+      <div class="leaderboard-header">Player</div>
+      <div class="leaderboard-header">Score</div>
+    </div>
+    <div id="leaderboardContent" class="leaderboard-grid"></div>
+    <button class="back-button selected" onclick="showMainMenu()">← Back to Menu</button>
+  </div>
+
+  <!-- Options Menu Screen -->
+  <div id="optionsScreen" class="screen container">
+    <h2>⚙️ Options ⚙️</h2>
+    <div class="options-card selected" onclick="showVolumeControl()">🔊 Volume Control</div>
+    <div class="options-card" onclick="showControllerSelection()">🎮 Select Controller Type</div>
+    <button class="back-button" onclick="showMainMenu()">← Back to Menu</button>
+  </div>
+
+  <!-- Volume Control Screen -->
+  <div id="volumeScreen" class="screen container">
+    <h2>🔊 Volume Control</h2>
+    <div class="volume-control">
+      <div class="volume-label">
+        <span>🎵 Music Volume</span>
+        <span id="musicVolumePercent">70%</span>
+      </div>
+      <input type="range" id="musicVolumeSlider" class="volume-slider" min="0" max="100" value="70">
+      <button class="test-button" onclick="testMusicVolume()">Test</button>
+    </div>
+    <div class="volume-control">
+      <div class="volume-label">
+        <span>🔔 Sound Effects Volume</span>
+        <span id="sfxVolumePercent">80%</span>
+      </div>
+      <input type="range" id="sfxVolumeSlider" class="volume-slider" min="0" max="100" value="80">
+      <button class="test-button" onclick="testSfxVolume()">Test</button>
+    </div>
+    <button class="save-button" onclick="saveVolumeSettings()">✓ Save Settings</button>
+    <button class="back-button" onclick="showOptionsMenu()">← Back</button>
+  </div>
+
+  <!-- Controller Selection Screen -->
+  <div id="controllerScreen" class="screen container">
+    <h2>🎮 Select Controller</h2>
+    <div class="controller-option selected" onclick="selectController('keyboard')">
+      <input type="radio" name="controller" value="keyboard" checked>
+      <span>⌨️ Keyboard</span>
+    </div>
+    <div class="controller-option" onclick="selectController('switch')">
+      <input type="radio" name="controller" value="switch">
+      <span>🎮 Nintendo Switch Controller (USB)</span>
+    </div>
+    <button class="save-button" onclick="saveControllerSettings()">✓ Save Settings</button>
+    <button class="back-button" onclick="showOptionsMenu()">← Back</button>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div id="gameOverScreen" class="modal">
+    <div class="modal-content">
+      <h2 class="modal-title">🎉 Game Over! 🎉</h2>
+      <p class="modal-text">Final Score: <strong id="finalScore">0</strong></p>
+      <p class="modal-text">Animals Caught: <strong id="finalCaught">0</strong></p>
+      <input type="text" id="playerNameInput" class="modal-input" placeholder="Your Name" maxlength="20">
+      <div>
+        <button class="modal-button primary" onclick="saveToLeaderboard()">💾 Save Score</button>
+        <button class="modal-button secondary" onclick="playAgain()">🔄 Play Again</button>
+        <button class="modal-button secondary" onclick="returnToMenu()">🏠 Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Modal -->
+  <div id="notificationModal" class="modal">
+    <div class="modal-content">
+      <h2 class="modal-title" id="notificationTitle">Title</h2>
+      <p class="modal-text" id="notificationMessage">Message</p>
+      <button class="modal-button primary" onclick="closeNotification()">OK</button>
+    </div>
+  </div>
+
+  <script>
+    // ========================================
+    // GLOBAL VARIABLES
+    // ========================================
+
+    // Data
+    let leaderboardData = [
+      { name: "Player 1", score: 100 },
+      { name: "Player 2", score: 80 },
+      { name: "Player 3", score: 60 },
+      { name: "Player 4", score: 40 },
+      { name: "Player 5", score: 20 }
+    ];
+    let selectedController = 'keyboard';
+    let musicVolume = 0.7;
+    let sfxVolume = 0.8;
+
+    // Audio
+    let audioContext;
+    let backgroundMusicGainNode;
+    let isMusicPlaying = false;
+    let musicStarted = false;
+    let melodyIndex = 0;
+    let melodyTimeout = null;
+
+    // Navigation
+    let currentScreen = 'main';
+    let currentNavIndex = 0;
+    let navElements = [];
+
+    // Game State
+    let canvas, ctx;
+    let gameRunning = false;
+    let score = 0;
+    let animalsCaught = 0;
+    let gameTimer = 60;
+    let timerInterval = null;
+
+    // Player
+    let player = {
+      x: 370,
+      y: 450,
+      width: 60,
+      height: 60,
+      speed: 5,
+      emoji: '🤡'
+    };
+
+    let keys = {
+      left: false,
+      right: false,
+      up: false,
+      down: false
+    };
+
+    // Animals
+    const animalTypes = [
+      { emoji: '🐵', points: 1, name: 'Monkey', weight: 15 },
+      { emoji: '🦍', points: -5, name: 'Gorilla', weight: 8 },
+      { emoji: '🦁', points: 10, name: 'Lion', weight: 10 },
+      { emoji: '🐯', points: 15, name: 'Tiger', weight: 8 },
+      { emoji: '🐆', points: 20, name: 'Leopard', weight: 6 },
+      { emoji: '🦓', points: 2, name: 'Zebra', weight: 12 },
+      { emoji: '🐪', points: 3, name: 'Camel', weight: 12 },
+      { emoji: '🐘', points: 1, name: 'Elephant', weight: 15 },
+      { emoji: '🐰', points: 50, name: 'Rabbit', weight: 2 },
+      { emoji: '🐻', points: 25, name: 'Bear', weight: 5 }
+    ];
+
+    let fallingAnimals = [];
+    let lastAnimalSpawn = 0;
+    const animalSpawnInterval = 1500;
+
+    // Gamepad
+    let gamepadIndex = null;
+    let gamepadAnimationFrame = null;
+    let lastAxisMove = 0;
+    let lastSliderAdjust = 0;
+    let lastButtonPress = {};
+    let isNotificationActive = false;
+
+    // Melody notes for background music
+    const melodyNotes = [
+      { freq: 1046.50, duration: 0.15 },
+      { freq: 987.77, duration: 0.15 },
+      { freq: 1046.50, duration: 0.15 },
+      { freq: 1174.66, duration: 0.15 },
+      { freq: 1318.51, duration: 0.25 },
+      { freq: 1174.66, duration: 0.15 },
+      { freq: 1046.50, duration: 0.15 },
+      { freq: 1174.66, duration: 0.15 }
+    ];
+
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+
+    window.onload = function() {
+      canvas = document.getElementById('gameCanvas');
+      ctx = canvas.getContext('2d');
+      
+      loadLeaderboard();
+      loadVolumeSettings();
+      loadControllerSettings();
+      initializeNavigation();
+      checkGamepadConnection();
+      
+      // Set up gamepad event listeners
+      window.addEventListener('gamepadconnected', onGamepadConnected);
+      window.addEventListener('gamepaddisconnected', onGamepadDisconnected);
+      
+      // Start polling for gamepad if already connected
+      if (navigator.getGamepads) {
+        const gamepads = navigator.getGamepads();
+        for (let i = 0; i < gamepads.length; i++) {
+          if (gamepads[i]) {
+            onGamepadConnected({ gamepad: gamepads[i] });
+            break;
+          }
+        }
+      }
+    };
+
+    // ========================================
+    // AUDIO SYSTEM
+    // ========================================
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        backgroundMusicGainNode = audioContext.createGain();
+        backgroundMusicGainNode.connect(audioContext.destination);
+        backgroundMusicGainNode.gain.value = 0.12 * musicVolume;
+      }
+    }
+
+    function startBackgroundMusic() {
+      if (!musicStarted) {
+        initAudio();
+        musicStarted = true;
+        isMusicPlaying = true;
+        document.getElementById('musicIndicator').style.display = 'block';
+        playMelodyNote();
+      }
+    }
+
+    function playMelodyNote() {
+      if (!isMusicPlaying) return;
+
+      const note = melodyNotes[melodyIndex];
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.type = 'triangle';
+      oscillator.frequency.value = note.freq;
+      
+      gainNode.gain.value = 0.12 * musicVolume;
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + note.duration);
+
+      melodyIndex = (melodyIndex + 1) % melodyNotes.length;
+      melodyTimeout = setTimeout(playMelodyNote, note.duration * 1000);
+    }
+
+    function stopBackgroundMusic() {
+      isMusicPlaying = false;
+      if (melodyTimeout) {
+        clearTimeout(melodyTimeout);
+        melodyTimeout = null;
+      }
+    }
+
+    function playClickSound() {
+      if (!audioContext) initAudio();
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(1500, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.08);
+      
+      gainNode.gain.value = 0.2 * sfxVolume;
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.08);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.08);
+    }
+
+    function playCatchSound(points) {
+      if (!audioContext) initAudio();
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.type = 'sine';
+      
+      let startFreq, endFreq, duration;
+      
+      if (points >= 50) {
+        // Rabbit - high pitched celebration
+        startFreq = 2000;
+        endFreq = 2500;
+        duration = 0.15;
+      } else if (points >= 20) {
+        // Leopard - higher pitched
+        startFreq = 1200;
+        endFreq = 1800;
+        duration = 0.12;
+      } else if (points < 0) {
+        // Gorilla - low warning tone
+        startFreq = 200;
+        endFreq = 150;
+        duration = 0.15;
+      } else {
+        // Default catch sound
+        startFreq = 800;
+        endFreq = 1200;
+        duration = 0.1;
+      }
+      
+      oscillator.frequency.setValueAtTime(startFreq, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(endFreq, audioContext.currentTime + duration);
+      
+      gainNode.gain.value = 0.2 * sfxVolume;
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + duration);
+    }
+
+    function testMusicVolume() {
+      if (!isMusicPlaying && musicStarted) {
+        isMusicPlaying = true;
+        playMelodyNote();
+        setTimeout(() => {
+          isMusicPlaying = false;
+        }, 2000);
+      }
+    }
+
+    function testSfxVolume() {
+      playCatchSound(10);
+    }
+
+    // ========================================
+    // GAME LOGIC
+    // ========================================
+
+    function initGame() {
+      score = 0;
+      animalsCaught = 0;
+      gameTimer = 60;
+      fallingAnimals = [];
+      lastAnimalSpawn = 0;
+      
+      player.x = 370;
+      player.y = 450;
+      
+      keys = {
+        left: false,
+        right: false,
+        up: false,
+        down: false
+      };
+      
+      updateHUD();
+    }
+
+    function startGame() {
+      playClickSound();
+      startBackgroundMusic();
+      
+      hideAllScreens();
+      document.getElementById('gameScreen').classList.add('active');
+      currentScreen = 'game';
+      
+      initGame();
+      gameRunning = true;
+      
+      // Start timer
+      timerInterval = setInterval(() => {
+        gameTimer--;
+        updateHUD();
+        
+        if (gameTimer <= 0) {
+          endGame();
+        }
+      }, 1000);
+      
+      gameLoop();
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      
+      const currentTime = Date.now();
+      
+      // Spawn animals
+      if (currentTime - lastAnimalSpawn > animalSpawnInterval) {
+        spawnAnimal();
+        lastAnimalSpawn = currentTime;
+      }
+      
+      // Update
+      updatePlayer();
+      updateAnimals();
+      
+      // Draw
+      drawBackground();
+      drawAnimals();
+      drawPlayer();
+      
+      requestAnimationFrame(gameLoop);
+    }
+
+    function updatePlayer() {
+      if (keys.left) player.x -= player.speed;
+      if (keys.right) player.x += player.speed;
+      if (keys.up) player.y -= player.speed;
+      if (keys.down) player.y += player.speed;
+      
+      // Keep player in bounds
+      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+      player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+    }
+
+    function updateAnimals() {
+      for (let i = fallingAnimals.length - 1; i >= 0; i--) {
+        const animal = fallingAnimals[i];
+        animal.y += animal.speed;
+        
+        // Check collision with player
+        if (checkCollision(player, animal)) {
+          score += animal.points;
+          animalsCaught++;
+          playCatchSound(animal.points);
+          fallingAnimals.splice(i, 1);
+          updateHUD();
+        }
+        // Remove if off screen
+        else if (animal.y > canvas.height) {
+          fallingAnimals.splice(i, 1);
+        }
+      }
+    }
+
+    function spawnAnimal() {
+      const animal = getRandomAnimal();
+      animal.x = Math.random() * (canvas.width - 50);
+      animal.y = -50;
+      animal.width = 50;
+      animal.height = 50;
+      animal.speed = 2 + Math.random() * 2;
+      fallingAnimals.push(animal);
+    }
+
+    function getRandomAnimal() {
+      const totalWeight = animalTypes.reduce((sum, animal) => sum + animal.weight, 0);
+      let random = Math.random() * totalWeight;
+      
+      for (let animal of animalTypes) {
+        random -= animal.weight;
+        if (random <= 0) {
+          return { ...animal };
+        }
+      }
+      
+      return { ...animalTypes[0] };
+    }
+
+    function checkCollision(obj1, obj2) {
+      return obj1.x < obj2.x + obj2.width &&
+             obj1.x + obj1.width > obj2.x &&
+             obj1.y < obj2.y + obj2.height &&
+             obj1.y + obj1.height > obj2.y;
+    }
+
+    function endGame() {
+      gameRunning = false;
+      clearInterval(timerInterval);
+      
+      document.getElementById('finalScore').textContent = score;
+      document.getElementById('finalCaught').textContent = animalsCaught;
+      document.getElementById('gameOverScreen').classList.add('active');
+    }
+
+    function updateHUD() {
+      document.getElementById('scoreHUD').textContent = `Score: ${score}`;
+      document.getElementById('timerHUD').textContent = `Time: ${gameTimer}`;
+      document.getElementById('caughtHUD').textContent = `Caught: ${animalsCaught}`;
+    }
+
+    // ========================================
+    // DRAWING FUNCTIONS
+    // ========================================
+
+    function drawBackground() {
+      // Sky
+      ctx.fillStyle = '#87CEEB';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Ground
+      ctx.fillStyle = '#5CB85C';
+      ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+      
+      // Pathway
+      ctx.fillStyle = '#A0A0A0';
+      ctx.fillRect(300, canvas.height - 80, 200, 80);
+      
+      // Buildings
+      ctx.fillStyle = '#606060';
+      ctx.fillRect(50, 200, 100, 150);
+      ctx.fillRect(200, 250, 80, 100);
+      ctx.fillRect(650, 220, 120, 130);
+      
+      // Circus tent
+      // Tent body
+      ctx.fillStyle = '#FF6B6B';
+      ctx.beginPath();
+      ctx.moveTo(500, 200);
+      ctx.lineTo(420, 350);
+      ctx.lineTo(580, 350);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Tent stripes
+      ctx.fillStyle = '#FFE66D';
+      ctx.beginPath();
+      ctx.moveTo(470, 200);
+      ctx.lineTo(430, 350);
+      ctx.lineTo(460, 350);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.beginPath();
+      ctx.moveTo(530, 200);
+      ctx.lineTo(540, 350);
+      ctx.lineTo(570, 350);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Tent flag
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.moveTo(500, 200);
+      ctx.lineTo(500, 150);
+      ctx.lineTo(520, 165);
+      ctx.lineTo(500, 180);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Trees
+      // Tree 1
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(120, 380, 20, 60);
+      ctx.fillStyle = '#228B22';
+      ctx.beginPath();
+      ctx.arc(130, 370, 30, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Tree 2
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(700, 360, 25, 80);
+      ctx.fillStyle = '#228B22';
+      ctx.beginPath();
+      ctx.arc(712, 350, 40, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawPlayer() {
+      ctx.font = '50px Arial';
+      ctx.fillText(player.emoji, player.x, player.y + player.height - 10);
+    }
+
+    function drawAnimals() {
+      ctx.font = '40px Arial';
+      for (let animal of fallingAnimals) {
+        ctx.fillText(animal.emoji, animal.x, animal.y + animal.height - 10);
+      }
+    }
+
+    // ========================================
+    // SCREEN NAVIGATION
+    // ========================================
+
+    function hideAllScreens() {
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+    }
+
+    function showMainMenu() {
+      playClickSound();
+      hideAllScreens();
+      document.getElementById('mainMenu').classList.add('active');
+      currentScreen = 'main';
+      initializeNavigation();
+    }
+
+    function showLeaderboard() {
+      playClickSound();
+      startBackgroundMusic();
+      hideAllScreens();
+      document.getElementById('leaderboardScreen').classList.add('active');
+      currentScreen = 'leaderboard';
+      renderLeaderboard();
+      initializeNavigation();
+    }
+
+    function showOptionsMenu() {
+      playClickSound();
+      startBackgroundMusic();
+      hideAllScreens();
+      document.getElementById('optionsScreen').classList.add('active');
+      currentScreen = 'options';
+      initializeNavigation();
+    }
+
+    function showVolumeControl() {
+      playClickSound();
+      hideAllScreens();
+      document.getElementById('volumeScreen').classList.add('active');
+      currentScreen = 'volume';
+      initializeNavigation();
+    }
+
+    function showControllerSelection() {
+      playClickSound();
+      hideAllScreens();
+      document.getElementById('controllerScreen').classList.add('active');
+      currentScreen = 'controller';
+      initializeNavigation();
+    }
+
+    function showCredits() {
+      playClickSound();
+      startBackgroundMusic();
+      showNotification('👨‍💻 Credits', 'Created with ❤️ by Unkn5wn\n\nThanks for playing!');
+    }
+
+    function confirmExit() {
+      playClickSound();
+      showNotification('👋 Exit Game', 'Thanks for playing! Close your browser tab to exit.');
+    }
+
+    function playAgain() {
+      playClickSound();
+      document.getElementById('gameOverScreen').classList.remove('active');
+      document.getElementById('playerNameInput').value = '';
+      startGame();
+    }
+
+    function returnToMenu() {
+      playClickSound();
+      document.getElementById('gameOverScreen').classList.remove('active');
+      document.getElementById('playerNameInput').value = '';
+      showMainMenu();
+    }
+
+    // ========================================
+    // LEADERBOARD
+    // ========================================
+
+    function saveToLeaderboard() {
+      const playerName = document.getElementById('playerNameInput').value.trim();
+      
+      if (!playerName) {
+        showNotification('⚠️ Name Required', 'Please enter your name!');
+        return;
+      }
+      
+      leaderboardData.push({ name: playerName, score: score });
+      leaderboardData.sort((a, b) => b.score - a.score);
+      leaderboardData = leaderboardData.slice(0, 5);
+      
+      saveLeaderboard();
+      
+      document.getElementById('gameOverScreen').classList.remove('active');
+      document.getElementById('playerNameInput').value = '';
+      
+      showNotification('🎉 Score Saved!', `Great job, ${playerName}! Your score of ${score} has been saved to the leaderboard!`);
+      window.goToLeaderboardAfterNotification = true;
+    }
+
+    function renderLeaderboard() {
+      const container = document.getElementById('leaderboardContent');
+      container.innerHTML = '';
+      
+      const medals = ['🥇', '🥈', '🥉', '🎪', '🎪'];
+      const colorClasses = ['gold', 'silver', 'bronze', '', ''];
+      
+      leaderboardData.forEach((entry, index) => {
+        const rankCell = document.createElement('div');
+        rankCell.className = `leaderboard-cell rank ${colorClasses[index]}`;
+        rankCell.textContent = `${medals[index]} ${index + 1}`;
+        
+        const nameCell = document.createElement('div');
+        nameCell.className = `leaderboard-cell ${colorClasses[index]}`;
+        nameCell.textContent = entry.name;
+        
+        const scoreCell = document.createElement('div');
+        scoreCell.className = `leaderboard-cell score ${colorClasses[index]}`;
+        scoreCell.textContent = `${entry.score} ⭐`;
+        
+        container.appendChild(rankCell);
+        container.appendChild(nameCell);
+        container.appendChild(scoreCell);
+      });
+    }
+
+    function loadLeaderboard() {
+      const saved = localStorage.getItem('circusLeaderboard');
+      if (saved) {
+        leaderboardData = JSON.parse(saved);
+      }
+    }
+
+    function saveLeaderboard() {
+      localStorage.setItem('circusLeaderboard', JSON.stringify(leaderboardData));
+    }
+
+    // ========================================
+    // SETTINGS
+    // ========================================
+
+    function saveVolumeSettings() {
+      playClickSound();
+      musicVolume = document.getElementById('musicVolumeSlider').value / 100;
+      sfxVolume = document.getElementById('sfxVolumeSlider').value / 100;
+      
+      localStorage.setItem('musicVolume', musicVolume);
+      localStorage.setItem('sfxVolume', sfxVolume);
+      
+      if (backgroundMusicGainNode) {
+        backgroundMusicGainNode.gain.value = 0.12 * musicVolume;
+      }
+      
+      showNotification('✓ Settings Saved', 'Your volume settings have been saved!');
+    }
+
+    function loadVolumeSettings() {
+      const savedMusic = localStorage.getItem('musicVolume');
+      const savedSfx = localStorage.getItem('sfxVolume');
+      
+      if (savedMusic !== null) {
+        musicVolume = parseFloat(savedMusic);
+        document.getElementById('musicVolumeSlider').value = musicVolume * 100;
+        document.getElementById('musicVolumePercent').textContent = Math.round(musicVolume * 100) + '%';
+      }
+      
+      if (savedSfx !== null) {
+        sfxVolume = parseFloat(savedSfx);
+        document.getElementById('sfxVolumeSlider').value = sfxVolume * 100;
+        document.getElementById('sfxVolumePercent').textContent = Math.round(sfxVolume * 100) + '%';
+      }
+    }
+
+    function saveControllerSettings() {
+      playClickSound();
+      localStorage.setItem('controllerType', selectedController);
+      showNotification('✓ Settings Saved', 'Your controller settings have been saved!');
+    }
+
+    function loadControllerSettings() {
+      const saved = localStorage.getItem('controllerType');
+      if (saved) {
+        selectedController = saved;
+        updateControllerUI();
+      }
+    }
+
+    function selectController(type) {
+      playClickSound();
+      selectedController = type;
+      updateControllerUI();
+    }
+
+    function updateControllerUI() {
+      const options = document.querySelectorAll('.controller-option');
+      options.forEach((option, index) => {
+        const radio = option.querySelector('input[type="radio"]');
+        if (radio.value === selectedController) {
+          radio.checked = true;
+          option.classList.add('selected');
+        } else {
+          radio.checked = false;
+          option.classList.remove('selected');
+        }
+      });
+    }
+
+    // ========================================
+    // NOTIFICATION MODAL
+    // ========================================
+
+    function showNotification(title, message) {
+      document.getElementById('notificationTitle').textContent = title;
+      document.getElementById('notificationMessage').textContent = message;
+      document.getElementById('notificationModal').classList.add('active');
+      isNotificationActive = true;
+    }
+
+    function closeNotification() {
+      playClickSound();
+      document.getElementById('notificationModal').classList.remove('active');
+      isNotificationActive = false;
+      
+      if (window.goToLeaderboardAfterNotification) {
+        window.goToLeaderboardAfterNotification = false;
+        showLeaderboard();
+      }
+    }
+
+    // ========================================
+    // NAVIGATION SYSTEM
+    // ========================================
+
+    function initializeNavigation() {
+      currentNavIndex = 0;
+      
+      switch (currentScreen) {
+        case 'main':
+          navElements = Array.from(document.querySelectorAll('#mainMenu .menu-button'));
+          break;
+        case 'leaderboard':
+          navElements = [document.querySelector('#leaderboardScreen .back-button')];
+          break;
+        case 'options':
+          navElements = [
+            ...Array.from(document.querySelectorAll('#optionsScreen .options-card')),
+            document.querySelector('#optionsScreen .back-button')
+          ];
+          break;
+        case 'volume':
+          navElements = [
+            document.getElementById('musicVolumeSlider'),
+            document.getElementById('sfxVolumeSlider'),
+            ...Array.from(document.querySelectorAll('#volumeScreen .save-button')),
+            document.querySelector('#volumeScreen .back-button')
+          ];
+          break;
+        case 'controller':
+          navElements = [
+            ...Array.from(document.querySelectorAll('#controllerScreen .controller-option')),
+            document.querySelector('#controllerScreen .save-button'),
+            document.querySelector('#controllerScreen .back-button')
+          ];
+          break;
+        default:
+          navElements = [];
+      }
+      
+      updateNavSelection();
+    }
+
+    function updateNavSelection() {
+      navElements.forEach((el, index) => {
+        if (el) {
+          if (index === currentNavIndex) {
+            el.classList.add('selected');
+          } else {
+            el.classList.remove('selected');
+          }
+        }
+      });
+    }
+
+    function moveNavUp() {
+      if (navElements.length === 0) return;
+      currentNavIndex = (currentNavIndex - 1 + navElements.length) % navElements.length;
+      updateNavSelection();
+      playClickSound();
+    }
+
+    function moveNavDown() {
+      if (navElements.length === 0) return;
+      currentNavIndex = (currentNavIndex + 1) % navElements.length;
+      updateNavSelection();
+      playClickSound();
+    }
+
+    function selectCurrentNavItem() {
+      if (navElements.length === 0) return;
+      const element = navElements[currentNavIndex];
+      if (element) {
+        element.click();
+      }
+    }
+
+    // ========================================
+    // KEYBOARD INPUT
+    // ========================================
+
+    document.addEventListener('keydown', (e) => {
+      if (currentScreen === 'game' && gameRunning) {
+        switch (e.key) {
+          case 'ArrowLeft':
+            keys.left = true;
+            break;
+          case 'ArrowRight':
+            keys.right = true;
+            break;
+          case 'ArrowUp':
+            keys.up = true;
+            break;
+          case 'ArrowDown':
+            keys.down = true;
+            break;
+          case 'Escape':
+            gameRunning = false;
+            clearInterval(timerInterval);
+            showMainMenu();
+            break;
+        }
+      } else if (!isNotificationActive) {
+        switch (e.key) {
+          case 'ArrowUp':
+          case 'w':
+          case 'W':
+            e.preventDefault();
+            moveNavUp();
+            break;
+          case 'ArrowDown':
+          case 's':
+          case 'S':
+            e.preventDefault();
+            moveNavDown();
+            break;
+          case 'Enter':
+          case ' ':
+            e.preventDefault();
+            selectCurrentNavItem();
+            break;
+          case 'Escape':
+            e.preventDefault();
+            if (currentScreen === 'options') {
+              showMainMenu();
+            } else if (currentScreen === 'volume' || currentScreen === 'controller') {
+              showOptionsMenu();
+            } else if (currentScreen === 'leaderboard') {
+              showMainMenu();
+            }
+            break;
+          case 'ArrowLeft':
+            if (currentScreen === 'volume') {
+              const slider = navElements[currentNavIndex];
+              if (slider && slider.tagName === 'INPUT') {
+                slider.value = Math.max(0, parseInt(slider.value) - 5);
+                updateVolumeDisplay(slider);
+              }
+            }
+            break;
+          case 'ArrowRight':
+            if (currentScreen === 'volume') {
+              const slider = navElements[currentNavIndex];
+              if (slider && slider.tagName === 'INPUT') {
+                slider.value = Math.min(100, parseInt(slider.value) + 5);
+                updateVolumeDisplay(slider);
+              }
+            }
+            break;
+        }
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (currentScreen === 'game' && gameRunning) {
+        switch (e.key) {
+          case 'ArrowLeft':
+            keys.left = false;
+            break;
+          case 'ArrowRight':
+            keys.right = false;
+            break;
+          case 'ArrowUp':
+            keys.up = false;
+            break;
+          case 'ArrowDown':
+            keys.down = false;
+            break;
+        }
+      }
+    });
+
+    function updateVolumeDisplay(slider) {
+      if (slider.id === 'musicVolumeSlider') {
+        document.getElementById('musicVolumePercent').textContent = slider.value + '%';
+        musicVolume = slider.value / 100;
+        if (backgroundMusicGainNode) {
+          backgroundMusicGainNode.gain.value = 0.12 * musicVolume;
+        }
+      } else if (slider.id === 'sfxVolumeSlider') {
+        document.getElementById('sfxVolumePercent').textContent = slider.value + '%';
+        sfxVolume = slider.value / 100;
+      }
+    }
+
+    // Volume slider event listeners
+    document.getElementById('musicVolumeSlider').addEventListener('input', function() {
+      updateVolumeDisplay(this);
+    });
+
+    document.getElementById('sfxVolumeSlider').addEventListener('input', function() {
+      updateVolumeDisplay(this);
+    });
+
+    // ========================================
+    // GAMEPAD INPUT
+    // ========================================
+
+    function checkGamepadConnection() {
+      if (navigator.getGamepads) {
+        const gamepads = navigator.getGamepads();
+        for (let i = 0; i < gamepads.length; i++) {
+          if (gamepads[i]) {
+            gamepadIndex = i;
+            document.getElementById('controllerIndicator').style.display = 'block';
+            startGamepadPolling();
+            return;
+          }
+        }
+      }
+    }
+
+    function onGamepadConnected(e) {
+      gamepadIndex = e.gamepad.index;
+      document.getElementById('controllerIndicator').style.display = 'block';
+      startGamepadPolling();
+    }
+
+    function onGamepadDisconnected(e) {
+      if (e.gamepad.index === gamepadIndex) {
+        gamepadIndex = null;
+        document.getElementById('controllerIndicator').style.display = 'none';
+        if (gamepadAnimationFrame) {
+          cancelAnimationFrame(gamepadAnimationFrame);
+          gamepadAnimationFrame = null;
+        }
+      }
+    }
+
+    function startGamepadPolling() {
+      if (gamepadAnimationFrame) return;
+      
+      function poll() {
+        pollGamepad();
+        gamepadAnimationFrame = requestAnimationFrame(poll);
+      }
+      
+      poll();
+    }
+
+    function pollGamepad() {
+      if (gamepadIndex === null) return;
+      
+      const gamepad = navigator.getGamepads()[gamepadIndex];
+      if (!gamepad) return;
+      
+      const now = Date.now();
+      
+      if (currentScreen === 'game' && gameRunning) {
+        // Left analog stick for movement
+        const leftX = gamepad.axes[0];
+        const leftY = gamepad.axes[1];
+        
+        keys.left = leftX < -0.2;
+        keys.right = leftX > 0.2;
+        keys.up = leftY < -0.2;
+        keys.down = leftY > 0.2;
+        
+        // B button (button 0) to return to menu
+        if (gamepad.buttons[0] && gamepad.buttons[0].pressed) {
+          if (!lastButtonPress[0] || now - lastButtonPress[0] > 300) {
+            lastButtonPress[0] = now;
+            gameRunning = false;
+            clearInterval(timerInterval);
+            showMainMenu();
+          }
+        }
+      } else if (!isNotificationActive) {
+        // Menu navigation with left stick Y axis
+        const leftY = gamepad.axes[1];
+        
+        if (Math.abs(leftY) > 0.5 && now - lastAxisMove > 300) {
+          lastAxisMove = now;
+          if (leftY < 0) {
+            moveNavUp();
+          } else {
+            moveNavDown();
+          }
+        }
+        
+        // D-pad navigation
+        if (gamepad.buttons[12] && gamepad.buttons[12].pressed) {
+          if (!lastButtonPress[12] || now - lastButtonPress[12] > 300) {
+            lastButtonPress[12] = now;
+            moveNavUp();
+          }
+        }
+        
+        if (gamepad.buttons[13] && gamepad.buttons[13].pressed) {
+          if (!lastButtonPress[13] || now - lastButtonPress[13] > 300) {
+            lastButtonPress[13] = now;
+            moveNavDown();
+          }
+        }
+        
+        // Volume slider adjustment with left stick X axis
+        if (currentScreen === 'volume') {
+          const leftX = gamepad.axes[0];
+          if (Math.abs(leftX) > 0.5 && now - lastSliderAdjust > 100) {
+            lastSliderAdjust = now;
+            const slider = navElements[currentNavIndex];
+            if (slider && slider.tagName === 'INPUT') {
+              if (leftX < 0) {
+                slider.value = Math.max(0, parseInt(slider.value) - 2);
+              } else {
+                slider.value = Math.min(100, parseInt(slider.value) + 2);
+              }
+              updateVolumeDisplay(slider);
+            }
+          }
+        }
+        
+        // A button (button 1) to select
+        if (gamepad.buttons[1] && gamepad.buttons[1].pressed) {
+          if (!lastButtonPress[1] || now - lastButtonPress[1] > 300) {
+            lastButtonPress[1] = now;
+            selectCurrentNavItem();
+          }
+        }
+        
+        // B button (button 0) to go back
+        if (gamepad.buttons[0] && gamepad.buttons[0].pressed) {
+          if (!lastButtonPress[0] || now - lastButtonPress[0] > 300) {
+            lastButtonPress[0] = now;
+            if (currentScreen === 'options') {
+              showMainMenu();
+            } else if (currentScreen === 'volume' || currentScreen === 'controller') {
+              showOptionsMenu();
+            } else if (currentScreen === 'leaderboard') {
+              showMainMenu();
+            }
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>
