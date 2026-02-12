@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catching Circus Animals</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      overflow: hidden;
+    }
+    
+    .main-screen {
+      text-align: center;
+      color: white;
+      z-index: 10;
+    }
+    
+    .game-title {
+      font-size: 72px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      animation: titlePulse 2s ease-in-out infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    
+    .game-subtitle {
+      font-size: 24px;
+      margin-bottom: 50px;
+      opacity: 0.9;
+    }
+    
+    .menu-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+    
+    .menu-button {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 15px 60px;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .menu-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.8);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .menu-button.selected {
+      background: rgba(74, 222, 128, 0.3);
+      border-color: #4ade80;
+      box-shadow: 0 0 30px rgba(74, 222, 128, 0.6);
+      transform: translateY(-5px) scale(1.05);
+    }
+    
+    .game-screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 100;
+    }
+    
+    .game-screen.active {
+      display: block;
+    }
+    
+    #gameCanvas {
+      display: block;
+      background: #87CEEB;
+      margin: 0 auto;
+      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+    }
+    
+    .game-hud {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      z-index: 101;
+    }
+    
+    .hud-item {
+      margin-bottom: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px 20px;
+      border-radius: 10px;
+      backdrop-filter: blur(5px);
+    }
+    
+    .level-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.5);
+      padding: 15px 25px;
+      border-radius: 10px;
+      backdrop-filter: blur(5px);
+      z-index: 101;
+    }
+    
+    .timer-display {
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      color: white;
+      font-size: 32px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.5);
+      padding: 15px 25px;
+      border-radius: 10px;
+      backdrop-filter: blur(5px);
+      z-index: 101;
+    }
+    
+    .game-over-screen {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      padding: 40px 50px;
+      border-radius: 20px;
+      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+      z-index: 1001;
+      max-width: 600px;
+      width: 90%;
+      text-align: center;
+    }
+    
+    .game-over-screen.active {
+      display: block;
+      animation: slideIn 0.5s ease;
+    }
+    
+    .game-over-title {
+      font-size: 48px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #667eea;
+    }
+    
+    .game-over-stats {
+      font-size: 24px;
+      margin-bottom: 30px;
+      line-height: 1.8;
+    }
+    
+    .game-over-stats strong {
+      color: #667eea;
+    }
+    
+    .name-input-container {
+      margin: 30px 0;
+    }
+    
+    .name-input-label {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #667eea;
+    }
+    
+    .name-input {
+      width: 100%;
+      padding: 15px 20px;
+      font-size: 20px;
+      border: 3px solid #667eea;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: bold;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    
+    .name-input:focus {
+      border-color: #4ade80;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    }
+    
+    .game-over-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    
+    .game-over-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .game-over-btn:hover {
+      background: #764ba2;
+      transform: scale(1.05);
+    }
+    
+    .game-over-btn.secondary {
+      background: rgba(102, 126, 234, 0.2);
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+    
+    .game-over-btn.secondary:hover {
+      background: rgba(102, 126, 234, 0.3);
+    }
+    
+    .notification-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      padding: 30px 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    }
+    
+    .notification-modal.active {
+      display: block;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translate(-50%, -60%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+    
+    .notification-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #667eea;
+    }
+    
+    .notification-message {
+      font-size: 16px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+    
+    .notification-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .notification-btn:hover {
+      background: #764ba2;
+      transform: scale(1.05);
+    }
+    
+    .music-indicator {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px 15px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      z-index: 100;
+    }
+    
+    .music-note {
+      font-size: 18px;
+      animation: musicPulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes musicPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+    
+    .controller-indicator {
+      position: fixed;
+      bottom: 60px;
+      left: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 12px;
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      z-index: 100;
+    }
+    
+    .controller-indicator.active {
+      display: flex;
+    }
+    
+     .options-menu-screen, .volume-screen, .controller-screen {
+      display: none;
+      text-align: center;
+      color: white;
+      z-index: 10;
+      max-width: 600px;
+      width: 90%;
+      padding: 20px 0;
+    }
+
+.leaderboard-screen, .options-menu-screen, .volume-screen, .controller-screen {
+  display: none;
+  text-align: center;
+  color: white;
+  z-index: 10;
+  max-width: 600px;
+  width: 90%;
+  padding: 20px 0 ;
+}
+
+.button-container {
+  margin-top: 20px;
+  padding: 15 px;
+  background: rgba (0, 0, 0, 0.3);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+}
+    
+    .leaderboard-screen.active, .options-menu-screen.active, 
+    .volume-screen.active, .controller-screen.active {
+      display: block;
+    }
+    
+    .leaderboard-title, .options-menu-title, .volume-title, .controller-title {
+      font-size: 48px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    }
+    
+.leaderboard-container {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 15px;
+  padding: 30px;
+  backdrop-filter: blur(10px);
+  margin-bottom: 20px;
+}
+
+.leaderboard-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 120px;
+  gap: 15px;
+  padding: 10px 15px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+  margin-bottom: 15px;
+  font-weight: bold;
+  font-size: 18px;
+  align-items: center;
+}
+
+.leaderboard-entry {
+  display: grid;
+  grid-template-columns: 80px 1fr 120px;
+  gap: 15px;
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+  align-items: center;
+}
+
+.entry-rank {
+  font-size: 22px;
+  font-weight: bold;
+  text-align: left;
+}
+
+.entry-name {
+  font-size: 20px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entry-score {
+  font-size: 22px;
+  font-weight: bold;
+  color: #ffd700;
+  text-align: right;
+}
+
+.rank-1 .entry-rank { color: #ffd700; font-size: 28px; }
+.rank-2 .entry-rank { color: #c0c0c0; font-size: 26px; }
+.rank-3 .entry-rank { color: #cd7f32; font-size: 24px; }
+
+    .option-menu-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .option-menu-item:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateX(10px);
+    }
+    
+    .option-menu-item.selected {
+      background: rgba(74, 222, 128, 0.3);
+      border-color: #4ade80;
+      box-shadow: 0 0 30px rgba(74, 222, 128, 0.6);
+      transform: translateX(10px) scale(1.02);
+    }
+    
+    .option-menu-icon {
+      font-size: 36px;
+    }
+    
+    .option-menu-text {
+      flex: 1;
+      text-align: left;
+    }
+    
+    .option-menu-name {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .option-menu-desc {
+      font-size: 16px;
+      opacity: 0.8;
+    }
+    
+    .volume-control {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+    }
+    
+    .volume-control.selected {
+      background: rgba(74, 222, 128, 0.2);
+      border-color: #4ade80;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+    }
+    
+    .volume-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .volume-label {
+      font-size: 20px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .volume-value {
+      font-size: 20px;
+      color: #4ade80;
+      min-width: 50px;
+      text-align: right;
+    }
+    
+    .volume-slider {
+      width: 100%;
+      height: 8px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+    }
+    
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      background: #4ade80;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+      transition: all 0.3s ease;
+    }
+    
+    .volume-slider::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      background: #4ade80;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+    }
+    
+    .test-sound-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 8px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+    }
+    
+    .test-sound-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .controller-options {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .controller-option {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .controller-option:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateX(10px);
+    }
+    
+    .controller-option.selected {
+      background: rgba(74, 222, 128, 0.3);
+      border-color: #4ade80;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    }
+    
+    .controller-option input[type="radio"] {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      accent-color: #4ade80;
+    }
+    
+    .controller-info {
+      flex: 1;
+      text-align: left;
+    }
+    
+    .controller-name {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .controller-icon {
+      font-size: 32px;
+    }
+    
+    .controller-desc {
+      font-size: 16px;
+      opacity: 0.8;
+    }
+    
+    .back-button, .save-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 3px solid rgba(255, 255, 255, 0.6);
+  color: white;
+  padding: 15px 50px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 8px 5px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.save-button {
+  background: rgba(74, 222, 128, 0.3);
+  border-color: rgba(74, 222, 128, 0.8);
+}
+
+.back-button:hover, .save-button:hover {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.save-button:hover {
+  background: rgba(74, 222, 128, 0.5);
+  border-color: rgba(74, 222, 128, 1);
+}
+
+.back-button.selected, .save-button.selected {
+  background: rgba(74, 222, 128, 0.4);
+  border-color: #4ade80;
+  box-shadow: 0 0 30px rgba(74, 222, 128, 0.8);
+  transform: translateY(-3px) scale(1.08);
+}
+    
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      animation: float 20s infinite ease-in-out;
+    }
+    
+    .circle:nth-child(1) { width: 100px; height: 100px; top: 10%; left: 20%; animation-delay: 0s; }
+    .circle:nth-child(2) { width: 150px; height: 150px; top: 60%; left: 80%; animation-delay: 2s; }
+    .circle:nth-child(3) { width: 80px; height: 80px; top: 40%; left: 10%; animation-delay: 4s; }
+    .circle:nth-child(4) { width: 120px; height: 120px; top: 80%; left: 70%; animation-delay: 6s; }
+    
+    @keyframes titlePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      25% { transform: translateY(-30px) translateX(30px); }
+      50% { transform: translateY(-60px) translateX(-30px); }
+      75% { transform: translateY(-30px) translateX(-60px); }
+    }
+    
+    .version {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-animation">
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+  </div>
+  
+  <div class="main-screen" id="mainScreen">
+    <h1 class="game-title">🎪 Catching Circus Animals 🎪</h1>
+    
+    
+    <div class="menu-buttons">
+      <button class="menu-button" data-menu-index="0" onclick="startGame()">Start Game</button>
+      <button class="menu-button" data-menu-index="1" onclick="showLeaderboard()">Leaderboard</button>
+      <button class="menu-button" data-menu-index="2" onclick="showOptionsMenu()">Options</button>
+      <button class="menu-button" data-menu-index="3" onclick="showCredits()">Credits</button>
+      <button class="menu-button" data-menu-index="4" onclick="exitGame()">Exit</button>
+    </div>
+  </div>
+  
+  <div class="game-screen" id="gameScreen">
+    <div class="game-hud">
+      <div class="hud-item">⭐ Score: <span id="scoreDisplay">0</span></div>
+      <div class="hud-item">🐘 Caught: <span id="caughtDisplay">0</span></div>
+    </div>
+    
+    <div class="level-indicator">Level 1: City Park 🏙️</div>
+    <div class="timer-display" id="timerDisplay">⏱️ 60s</div>
+    <canvas id="gameCanvas"></canvas>
+  </div>
+  
+  <div class="game-over-screen" id="gameOverScreen">
+    <div class="game-over-title">🎉 Game Over! 🎉</div>
+    <div class="game-over-stats">
+      <div>Final Score: <strong id="finalScore">0</strong> ⭐</div>
+      <div>Animals Caught: <strong id="finalCaught">0</strong> 🐘</div>
+    </div>
+    
+    <div class="name-input-container">
+      <div class="name-input-label">Enter Your Name:</div>
+      <input type="text" id="playerNameInput" class="name-input" maxlength="20" placeholder="Your Name" autocomplete="off">
+    </div>
+    
+    <div class="game-over-buttons">
+      <button class="game-over-btn" onclick="saveToLeaderboard()">💾 Save Score</button>
+      <button class="game-over-btn secondary" onclick="playAgain()">🔄 Play Again</button>
+      <button class="game-over-btn secondary" onclick="backToMenuFromGameOver()">🏠 Main Menu</button>
+    </div>
+  </div>
+  
+  <div class="leaderboard-screen" id="leaderboardScreen">
+  <h1 class="leaderboard-title">🏆 Leaderboard 🏆</h1>
+  <div class="leaderboard-container">
+    <div class="leaderboard-header">
+      <div>Rank</div>
+      <div>Player</div>
+      <div style="text-align: right;">Score</div>
+    </div>
+    <div id="leaderboardList"></div>
+  </div>
+  <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 15px;">
+    <button class="back-button" data-nav-index="0" onclick="backToMenu()" style="background: rgba(255, 255, 255, 0.3); border: 3px solid white; padding: 18px 60px; font-size: 22px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);">← Back to Menu</button>
+  </div>
+</div>
+  
+  <div class="options-menu-screen" id="optionsMenuScreen">
+    <h1 class="options-menu-title">⚙️ Options ⚙️</h1>
+    <div class="options-menu-container">
+      <div class="option-menu-item" data-nav-index="0" onclick="showVolumeControl()">
+        <span class="option-menu-icon">🔊</span>
+        <div class="option-menu-text">
+          <div class="option-menu-name">Volume Control</div>
+          <div class="option-menu-desc">Adjust music and sound effects volume</div>
+        </div>
+      </div>
+      <div class="option-menu-item" data-nav-index="1" onclick="showControllerSelect()">
+        <span class="option-menu-icon">🎮</span>
+        <div class="option-menu-text">
+          <div class="option-menu-name">Select Controller Type</div>
+          <div class="option-menu-desc">Choose between keyboard or Switch controller</div>
+        </div>
+      </div>
+    </div>
+    <button class="back-button" data-nav-index="2" onclick="backToMenu()">← Back to Menu</button>
+  </div>
+  
+  <div class="volume-screen" id="volumeScreen">
+    <h1 class="volume-title">🔊 Volume Control 🔊</h1>
+    <div class="volume-container">
+      <div class="volume-control" id="musicVolumeControl" data-nav-index="0">
+        <div class="volume-header">
+          <div class="volume-label">🎵 Music Volume</div>
+          <div class="volume-value" id="musicVolumeValue">70%</div>
+        </div>
+        <input type="range" min="0" max="100" value="70" class="volume-slider" id="musicVolume" oninput="updateMusicVolume(this.value)">
+        <button class="test-sound-btn" id="testMusicBtn" onclick="testMusicSound()">🎵 Test Music</button>
+      </div>
+      <div class="volume-control" id="sfxVolumeControl" data-nav-index="1">
+        <div class="volume-header">
+          <div class="volume-label">🔔 Sound Effects Volume</div>
+          <div class="volume-value" id="sfxVolumeValue">80%</div>
+        </div>
+        <input type="range" min="0" max="100" value="80" class="volume-slider" id="sfxVolume" oninput="updateSFXVolume(this.value)">
+        <button class="test-sound-btn" id="testSfxBtn" onclick="testClickSound()">🔔 Test Bubble Sound</button>
+      </div>
+    </div>
+    <div>
+      <button class="save-button" data-nav-index="2" onclick="saveVolumeSettings()">✓ Save Settings</button>
+      <button class="back-button" data-nav-index="3" onclick="backToOptionsMenu()">← Back</button>
+    </div>
+  </div>
+  
+  <div class="controller-screen" id="controllerScreen">
+    <h1 class="controller-title">🎮 Select Controller 🎮</h1>
+    <div class="controller-container">
+      <div class="controller-options">
+        <div class="controller-option" id="keyboardOption" data-nav-index="0" onclick="selectController('keyboard')">
+          <input type="radio" name="controller" id="keyboardRadio" value="keyboard">
+          <span class="controller-icon">⌨️</span>
+          <div class="controller-info">
+            <div class="controller-name">Keyboard</div>
+            <div class="controller-desc">Use arrow keys and spacebar to play</div>
+          </div>
+        </div>
+        <div class="controller-option" id="switchOption" data-nav-index="1" onclick="selectController('switch')">
+          <input type="radio" name="controller" id="switchRadio" value="switch">
+          <span class="controller-icon">🎮</span>
+          <div class="controller-info">
+            <div class="controller-name">Nintendo Switch Controller (USB)</div>
+            <div class="controller-desc">Connect your Joy-Con or Pro Controller via USB</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <button class="save-button" data-nav-index="2" onclick="saveControllerSettings()">✓ Save Settings</button>
+      <button class="back-button" data-nav-index="3" onclick="backToOptionsMenu()">← Back</button>
+    </div>
+  </div>
+  
+  <div class="notification-modal" id="notificationModal">
+    <div class="notification-title" id="notificationTitle"></div>
+    <div class="notification-message" id="notificationMessage"></div>
+    <button class="notification-btn" onclick="closeNotification()">OK</button>
+  </div>
+  
+  <div class="music-indicator" id="musicIndicator" style="display: none;">
+    <span class="music-note">🎵</span>
+    <span>Circus Music Playing</span>
+  </div>
+  
+  <div class="controller-indicator" id="controllerIndicator">
+    <span>🎮</span>
+    <span>Controller Connected</span>
+  </div>
+  
+  <div class="version">v1.0.0</div>
+  
+  <script>
+    let leaderboardData = [
+      { name: "CircusMaster", score: 247 },
+      { name: "AnimalWhisperer", score: 198 },
+      { name: "TrapezePro", score: 176 },
+      { name: "ClownKing", score: 154 },
+      { name: "RingLeader", score: 132 }
+    ];
+    
+    let selectedController = 'keyboard';
+    let musicVolume = 0.7;
+    let sfxVolume = 0.8;
+    
+    let audioContext;
+    let backgroundMusicGainNode;
+    let isMusicPlaying = false;
+    let musicStarted = false;
+    
+    let currentScreen = 'main';
+    let currentNavIndex = 0;
+    let navElements = [];
+    let currentVolumeControlIndex = 0;
+    let isNotificationActive = false;
+    
+    let canvas, ctx;
+    let gameRunning = false;
+    let score = 0;
+    let animalsCaught = 0;
+    let gameTimer = 60;
+    let timerInterval = null;
+    
+    let player = {
+      x: 400,
+      y: 500,
+      width: 60,
+      height: 60,
+      speed: 5,
+      emoji: '🤡'
+    };
+    
+    let keys = {
+      left: false,
+      right: false,
+      up: false,
+      down: false
+    };
+    
+    const animalTypes = [
+      { emoji: '🐵', points: 1, name: 'Monkey', weight: 15 },
+      { emoji: '🦍', points: -5, name: 'Gorilla', weight: 8 },
+      { emoji: '🦁', points: 10, name: 'Lion', weight: 10 },
+      { emoji: '🐯', points: 15, name: 'Tiger', weight: 8 },
+      { emoji: '🐆', points: 20, name: 'Leopard', weight: 6 },
+      { emoji: '🦓', points: 2, name: 'Zebra', weight: 12 },
+      { emoji: '🐪', points: 3, name: 'Camel', weight: 12 },
+      { emoji: '🐘', points: 1, name: 'Elephant', weight: 15 },
+      { emoji: '🐰', points: 50, name: 'Rabbit', weight: 2 },
+      { emoji: '🐻', points: 25, name: 'Bear', weight: 5 }
+    ];
+    
+    let fallingAnimals = [];
+    let lastAnimalSpawn = 0;
+    const animalSpawnInterval = 1500;
+    
+    let gamepadIndex = null;
+    let gamepadAnimationFrame = null;
+    let lastAxisYValue = 0;
+    let lastAxisXValue = 0;
+    let lastButtonAState = false;
+    let lastButtonBState = false;
+    const AXIS_THRESHOLD = 0.2;
+    const AXIS_COOLDOWN = 300;
+    const SLIDER_COOLDOWN = 100;
+    let lastAxisMoveTime = 0;
+    let lastSliderMoveTime = 0;
+    
+    const melodyNotes = [
+      { freq: 1046.50, duration: 0.15 }, { freq: 987.77, duration: 0.15 },
+      { freq: 1046.50, duration: 0.15 }, { freq: 1174.66, duration: 0.15 },
+      { freq: 1318.51, duration: 0.25 }, { freq: 1174.66, duration: 0.15 },
+      { freq: 1046.50, duration: 0.15 }, { freq: 1174.66, duration: 0.15 }
+    ];
+    
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        backgroundMusicGainNode = audioContext.createGain();
+        backgroundMusicGainNode.connect(audioContext.destination);
+      }
+    }
+    
+    function startBackgroundMusic() {
+      if (isMusicPlaying) return;
+      initAudio();
+      isMusicPlaying = true;
+      musicStarted = true;
+      backgroundMusicGainNode.gain.value = 0.12 * musicVolume;
+      playMusicLoop();
+      document.getElementById('musicIndicator').style.display = 'flex';
+    }
+    
+    function playMusicLoop() {
+      if (!isMusicPlaying) return;
+      let startTime = audioContext.currentTime;
+      melodyNotes.forEach((note) => {
+        const oscillator = audioContext.createOscillator();
+        const noteGain = audioContext.createGain();
+        oscillator.connect(noteGain);
+        noteGain.connect(backgroundMusicGainNode);
+        oscillator.frequency.value = note.freq;
+        oscillator.type = 'triangle';
+        noteGain.gain.setValueAtTime(0, startTime);
+        noteGain.gain.linearRampToValueAtTime(1, startTime + 0.01);
+        noteGain.gain.setValueAtTime(1, startTime + note.duration * 0.6);
+        noteGain.gain.linearRampToValueAtTime(0, startTime + note.duration);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + note.duration);
+        startTime += note.duration;
+      });
+      const totalDuration = melodyNotes.reduce((sum, note) => sum + note.duration, 0);
+      setTimeout(() => { if (isMusicPlaying) playMusicLoop(); }, totalDuration * 1000);
+    }
+    
+    function stopBackgroundMusic() {
+      isMusicPlaying = false;
+      document.getElementById('musicIndicator').style.display = 'none';
+    }
+    
+    function playClickSound() {
+      initAudio();
+      if (!musicStarted && currentScreen === 'main') startBackgroundMusic();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.frequency.setValueAtTime(1500, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.08);
+      oscillator.type = 'sine';
+      gainNode.gain.setValueAtTime(0.15 * sfxVolume, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.08);
+    }
+    
+    function playCatchSound(points) {
+      initAudio();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      if (points >= 50) {
+        oscillator.frequency.setValueAtTime(2000, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(2500, audioContext.currentTime + 0.15);
+      } else if (points >= 20) {
+        oscillator.frequency.setValueAtTime(1200, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(1800, audioContext.currentTime + 0.12);
+      } else if (points < 0) {
+        oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.15);
+      } else {
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+      }
+      
+      oscillator.type = 'sine';
+      gainNode.gain.setValueAtTime(0.2 * sfxVolume, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.15);
+    }
+    
+    function testClickSound() { playClickSound(); }
+    
+    function testMusicSound() {
+      initAudio();
+      const testNotes = [1046.50, 1318.51, 1568.00, 2093.00];
+      let time = audioContext.currentTime;
+      testNotes.forEach((freq, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.frequency.value = freq;
+        oscillator.type = 'triangle';
+        const startTime = time + (index * 0.15);
+        gainNode.gain.setValueAtTime(0.15 * musicVolume, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.2);
+      });
+    }
+    
+    function updateMusicVolume(value) {
+      musicVolume = value / 100;
+      document.getElementById('musicVolumeValue').textContent = value + '%';
+      if (backgroundMusicGainNode) {
+        backgroundMusicGainNode.gain.value = 0.12 * musicVolume;
+      }
+    }
+    
+    function updateSFXVolume(value) {
+      sfxVolume = value / 100;
+      document.getElementById('sfxVolumeValue').textContent = value + '%';
+    }
+    
+    function showNotification(title, message) {
+      document.getElementById('notificationTitle').textContent = title;
+      document.getElementById('notificationMessage').textContent = message;
+      document.getElementById('notificationModal').classList.add('active');
+      isNotificationActive = true;
+    }
+    
+    function closeNotification() {
+      document.getElementById('notificationModal').classList.remove('active');
+      isNotificationActive = false;
+
+      // Check if we should go to leaderboard
+      if (window.goToLeaderboardAfterNotification) {
+        window.goToLeaderboardAfterNotification = false;
+        showLeaderboard();
+      }
+    }
+    
+    function saveVolumeSettings() {
+      localStorage.setItem('musicVolume', musicVolume);
+      localStorage.setItem('sfxVolume', sfxVolume);
+      showNotification('✓ Volume Settings Saved', `Music: ${Math.round(musicVolume * 100)}%\nSound Effects: ${Math.round(sfxVolume * 100)}%`);
+    }
+    
+    function loadVolumeSettings() {
+      const savedMusic = localStorage.getItem('musicVolume');
+      const savedSFX = localStorage.getItem('sfxVolume');
+      if (savedMusic) {
+        musicVolume = parseFloat(savedMusic);
+        document.getElementById('musicVolume').value = Math.round(musicVolume * 100);
+        document.getElementById('musicVolumeValue').textContent = Math.round(musicVolume * 100) + '%';
+      }
+      if (savedSFX) {
+        sfxVolume = parseFloat(savedSFX);
+        document.getElementById('sfxVolume').value = Math.round(sfxVolume * 100);
+        document.getElementById('sfxVolumeValue').textContent = Math.round(sfxVolume * 100) + '%';
+      }
+    }
+    
+    function selectController(type) {
+      playClickSound();
+      selectedController = type;
+      document.getElementById('keyboardOption').classList.remove('selected');
+      document.getElementById('switchOption').classList.remove('selected');
+      document.getElementById('keyboardRadio').checked = false;
+      document.getElementById('switchRadio').checked = false;
+      if (type === 'keyboard') {
+        document.getElementById('keyboardOption').classList.add('selected');
+        document.getElementById('keyboardRadio').checked = true;
+      } else {
+        document.getElementById('switchOption').classList.add('selected');
+        document.getElementById('switchRadio').checked = true;
+      }
+    }
+    
+    function saveControllerSettings() {
+      localStorage.setItem('controllerType', selectedController);
+      const controllerName = selectedController === 'keyboard' ? 'Keyboard ⌨️' : 'Nintendo Switch Controller 🎮';
+      showNotification('✓ Controller Settings Saved', `Using: ${controllerName}`);
+    }
+    
+    function loadControllerSettings() {
+      const saved = localStorage.getItem('controllerType');
+      if (saved) selectedController = saved;
+      selectController(selectedController);
+    }
+    
+    function loadLeaderboard() {
+      const saved = localStorage.getItem('circusLeaderboard');
+      if (saved) {
+        leaderboardData = JSON.parse(saved);
+      }
+    }
+    
+    function saveLeaderboard() {
+      localStorage.setItem('circusLeaderboard', JSON.stringify(leaderboardData));
+    }
+    
+    function saveToLeaderboard() {
+      const playerName = document.getElementById('playerNameInput').value.trim();
+      
+      if (!playerName) {
+        showNotification('⚠️ Name Required', 'Please enter your name to save your score!');
+        return;
+      }
+      
+      leaderboardData.push({
+        name: playerName,
+        score: score
+      });
+      
+      leaderboardData.sort((a, b) => b.score - a.score);
+      leaderboardData = leaderboardData.slice(0, 5); // Keep only top 5 scores
+      
+      saveLeaderboard();
+
+      // Close game over screen
+      document.getElementById('gameOverScreen').classList.remove('active');
+      document.getElementById('playerNameInput').value = '';
+      
+      showNotification('🎉 Score Saved!', `Great job, ${playerName}!\nYour score of ${score} has been saved to the leaderboard!`);
+      
+     // Set flag to go to leaderboard after notification closes
+     window.goToLeaderboardAfterNotification = true; 
+
+      document.getElementById('gameOverScreen').classList.remove('active');
+    }
+    
+    function playAgain() {
+      document.getElementById('gameOverScreen').classList.remove('active');
+      document.getElementById('playerNameInput').value = '';
+      startGame();
+    }
+    
+    function backToMenuFromGameOver() {
+      document.getElementById('gameOverScreen').classList.remove('active');
+      document.getElementById('playerNameInput').value = '';
+      backToMenu();
+    }
+    
+    function getRandomAnimal() {
+      const totalWeight = animalTypes.reduce((sum, animal) => sum + animal.weight, 0);
+      let random = Math.random() * totalWeight;
+      for (let animal of animalTypes) {
+        random -= animal.weight;
+        if (random <= 0) return { ...animal };
+      }
+      return { ...animalTypes[0] };
+    }
+    
+    function spawnAnimal() {
+      const animal = getRandomAnimal();
+      fallingAnimals.push({
+        x: Math.random() * (canvas.width - 50),
+        y: -60,
+        width: 50,
+        height: 50,
+        speed: 2 + Math.random() * 2,
+        emoji: animal.emoji,
+        points: animal.points,
+        name: animal.name
+      });
+    }
+    
+    function updateAnimals() {
+      const currentTime = Date.now();
+      if (currentTime - lastAnimalSpawn > animalSpawnInterval) {
+        spawnAnimal();
+        lastAnimalSpawn = currentTime;
+      }
+      for (let i = fallingAnimals.length - 1; i >= 0; i--) {
+        const animal = fallingAnimals[i];
+        animal.y += animal.speed;
+        if (checkCollision(player, animal)) {
+          score += animal.points;
+          animalsCaught++;
+          playCatchSound(animal.points);
+          updateScoreDisplay();
+          fallingAnimals.splice(i, 1);
+          continue;
+        }
+        if (animal.y > canvas.height) {
+          fallingAnimals.splice(i, 1);
+        }
+      }
+    }
+    
+    function checkCollision(obj1, obj2) {
+      return obj1.x < obj2.x + obj2.width &&
+             obj1.x + obj1.width > obj2.x &&
+             obj1.y < obj2.y + obj2.height &&
+             obj1.y + obj1.height > obj2.y;
+    }
+    
+    function drawAnimals() {
+      fallingAnimals.forEach(animal => {
+        ctx.font = `${animal.height}px Arial`;
+        ctx.fillText(animal.emoji, animal.x, animal.y + animal.height);
+      });
+    }
+    
+    function startTimer() {
+      gameTimer = 60;
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        gameTimer--;
+        updateTimerDisplay();
+        if (gameTimer <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+    
+    function updateTimerDisplay() {
+      document.getElementById('timerDisplay').textContent = `⏱️ ${gameTimer}s`;
+    }
+    
+    function endGame() {
+      gameRunning = false;
+      clearInterval(timerInterval);
+      fallingAnimals = [];
+      
+      document.getElementById('finalScore').textContent = score;
+      document.getElementById('finalCaught').textContent = animalsCaught;
+      document.getElementById('gameOverScreen').classList.add('active');
+      document.getElementById('playerNameInput').value = '';
+      document.getElementById('playerNameInput').focus();
+    }
+    
+    function initGame() {
+      canvas = document.getElementById('gameCanvas');
+      ctx = canvas.getContext('2d');
+      canvas.width = 800;
+      canvas.height = 600;
+      score = 0;
+      animalsCaught = 0;
+      fallingAnimals = [];
+      lastAnimalSpawn = Date.now();
+      player.x = canvas.width / 2 - player.width / 2;
+      player.y = canvas.height - 100;
+      updateScoreDisplay();
+      startTimer();
+    }
+    
+    function startGame() {
+      stopBackgroundMusic();
+      hideAllScreens();
+      document.getElementById('gameScreen').classList.add('active');
+      currentScreen = 'game';
+      initGame();
+      gameRunning = true;
+      gameLoop();
+    }
+    
+    function drawBackground() {
+      ctx.fillStyle = '#87CEEB';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#5CB85C';
+      ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+      ctx.fillStyle = '#A0A0A0';
+      ctx.fillRect(canvas.width / 2 - 100, canvas.height - 80, 200, 80);
+      ctx.fillStyle = '#606060';
+      ctx.fillRect(50, canvas.height - 250, 80, 170);
+      ctx.fillRect(150, canvas.height - 280, 100, 200);
+      ctx.fillRect(600, canvas.height - 230, 70, 150);
+      ctx.fillRect(680, canvas.height - 270, 90, 190);
+      ctx.fillStyle = '#FFD700';
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 6; j++) {
+          ctx.fillRect(160 + i * 20, canvas.height - 270 + j * 30, 12, 18);
+        }
+      }
+      ctx.fillStyle = '#FF6B6B';
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, canvas.height - 200);
+      ctx.lineTo(canvas.width / 2 - 100, canvas.height - 80);
+      ctx.lineTo(canvas.width / 2 + 100, canvas.height - 80);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#FFE66D';
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2 - 50, canvas.height - 200);
+      ctx.lineTo(canvas.width / 2 - 70, canvas.height - 80);
+      ctx.lineTo(canvas.width / 2 - 30, canvas.height - 80);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2 + 50, canvas.height - 200);
+      ctx.lineTo(canvas.width / 2 + 30, canvas.height - 80);
+      ctx.lineTo(canvas.width / 2 + 70, canvas.height - 80);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height - 200, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(100, canvas.height - 140, 20, 60);
+      ctx.fillRect(650, canvas.height - 140, 20, 60);
+      ctx.fillStyle = '#228B22';
+      ctx.beginPath();
+      ctx.arc(110, canvas.height - 140, 40, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(660, canvas.height - 140, 40, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    function drawPlayer() {
+      ctx.font = `${player.height}px Arial`;
+      ctx.fillText(player.emoji, player.x, player.y + player.height);
+    }
+    
+    function updatePlayer() {
+      if (keys.left && player.x > 0) player.x -= player.speed;
+      if (keys.right && player.x < canvas.width - player.width) player.x += player.speed;
+      if (keys.up && player.y > 0) player.y -= player.speed;
+      if (keys.down && player.y < canvas.height - player.height) player.y += player.speed;
+      
+      if (currentScreen === 'game' && gamepadIndex !== null) {
+        const gamepads = navigator.getGamepads();
+        const gamepad = gamepads[gamepadIndex];
+        if (gamepad) {
+          const axisX = gamepad.axes[0];
+          const axisY = gamepad.axes[1];
+          if (Math.abs(axisX) > AXIS_THRESHOLD) {
+            player.x += axisX * player.speed;
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+          }
+          if (Math.abs(axisY) > AXIS_THRESHOLD) {
+            player.y += axisY * player.speed;
+            player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+          }
+          const buttonB = gamepad.buttons[0];
+          if (buttonB.pressed && !lastButtonBState) {
+            backToMenu();
+          }
+          lastButtonBState = buttonB.pressed;
+        }
+      }
+    }
+    
+    function updateScoreDisplay() {
+      document.getElementById('scoreDisplay').textContent = score;
+      document.getElementById('caughtDisplay').textContent = animalsCaught;
+    }
+    
+    function gameLoop() {
+      if (!gameRunning) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+      updateAnimals();
+      drawAnimals();
+      updatePlayer();
+      drawPlayer();
+      requestAnimationFrame(gameLoop);
+    }
+    
+    function initializeNavigation() {
+      switch(currentScreen) {
+        case 'main':
+          navElements = Array.from(document.querySelectorAll('.menu-button'));
+          break;
+        case 'leaderboard':
+          navElements = Array.from(document.querySelectorAll('#leaderboardScreen [data-nav-index]'));
+          break;
+        case 'options':
+          navElements = Array.from(document.querySelectorAll('#optionsMenuScreen [data-nav-index]'));
+          break;
+        case 'volume':
+          navElements = Array.from(document.querySelectorAll('#volumeScreen [data-nav-index]'));
+          currentVolumeControlIndex = 0;
+          break;
+        case 'controller':
+          navElements = Array.from(document.querySelectorAll('#controllerScreen [data-nav-index]'));
+          break;
+      }
+      currentNavIndex = 0;
+      updateNavSelection();
+    }
+    
+    function updateNavSelection() {
+      navElements.forEach((el, index) => {
+        if (index === currentNavIndex) {
+          el.classList.add('selected');
+        } else {
+          el.classList.remove('selected');
+        }
+      });
+      if (currentScreen === 'volume' && currentNavIndex < 2) {
+        document.getElementById('musicVolumeControl').classList.remove('selected');
+        document.getElementById('sfxVolumeControl').classList.remove('selected');
+        if (currentNavIndex === 0) {
+          document.getElementById('musicVolumeControl').classList.add('selected');
+        } else if (currentNavIndex === 1) {
+          document.getElementById('sfxVolumeControl').classList.add('selected');
+        }
+      }
+    }
+    
+    function moveNavUp() {
+      playClickSound();
+      currentNavIndex = (currentNavIndex - 1 + navElements.length) % navElements.length;
+      updateNavSelection();
+      if (currentScreen === 'volume' && currentNavIndex < 2) {
+        currentVolumeControlIndex = currentNavIndex;
+      }
+    }
+    
+    function moveNavDown() {
+      playClickSound();
+      currentNavIndex = (currentNavIndex + 1) % navElements.length;
+      updateNavSelection();
+      if (currentScreen === 'volume' && currentNavIndex < 2) {
+        currentVolumeControlIndex = currentNavIndex;
+      }
+    }
+    
+    function selectCurrentNavItem() {
+      if (navElements[currentNavIndex]) {
+        playClickSound();
+        navElements[currentNavIndex].click();
+      }
+    }
+    
+    function adjustVolumeLeft() {
+      if (currentScreen !== 'volume' || currentNavIndex > 1) return;
+      if (currentVolumeControlIndex === 0) {
+        let current = parseInt(document.getElementById('musicVolume').value);
+        current = Math.max(0, current - 5);
+        document.getElementById('musicVolume').value = current;
+        updateMusicVolume(current);
+      } else {
+        let current = parseInt(document.getElementById('sfxVolume').value);
+        current = Math.max(0, current - 5);
+        document.getElementById('sfxVolume').value = current;
+        updateSFXVolume(current);
+      }
+    }
+    
+    function adjustVolumeRight() {
+      if (currentScreen !== 'volume' || currentNavIndex > 1) return;
+      if (currentVolumeControlIndex === 0) {
+        let current = parseInt(document.getElementById('musicVolume').value);
+        current = Math.min(100, current + 5);
+        document.getElementById('musicVolume').value = current;
+        updateMusicVolume(current);
+      } else {
+        let current = parseInt(document.getElementById('sfxVolume').value);
+        current = Math.min(100, current + 5);
+        document.getElementById('sfxVolume').value = current;
+        updateSFX
+        updateSFXVolume(current);
+      }
+    }
+    
+    function checkGamepadConnection() {
+      const gamepads = navigator.getGamepads();
+      let connected = false;
+      for (let i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) {
+          gamepadIndex = i;
+          connected = true;
+          break;
+        }
+      }
+      const indicator = document.getElementById('controllerIndicator');
+      if (connected) {
+        indicator.classList.add('active');
+      } else {
+        indicator.classList.remove('active');
+        gamepadIndex = null;
+      }
+      return connected;
+    }
+    
+    function pollGamepad() {
+      checkGamepadConnection();
+      if (gamepadIndex !== null && currentScreen !== 'game') {
+        const gamepads = navigator.getGamepads();
+        const gamepad = gamepads[gamepadIndex];
+
+        if (gamepad) {
+          if (isNotificationActive) {
+            const buttonA = gamepad.buttons[1];
+            if (buttonA.pressed && !lastButtonAState) {
+              closeNotification();
+              playClickSound();
+            }
+            lastButtonAState = buttonA.pressed;
+            gamepadAnimationFrame = requestAnimationFrame(pollGamepad);
+            return;
+          }
+          const axisY = gamepad.axes[1];
+          const axisX = gamepad.axes[0];
+          const currentTime = Date.now();
+
+         // Leaderboard scrolling
+         if (currentScreen === 'leaderboard') {
+           const leaderboardContainer = document.querySelector('.leaderboard-container');
+
+         if (Math.abs(axisY) > AXIS_THRESHOLD) {
+           leaderboardContainer.scrollTop += axisY * 15; // Scroll speed
+         
+         // D-pad scrolling (buttons 12 = up, 13 = down on most controllers)
+         if (gamepad.buttons[12] && gamepad.buttons[12].pressed)
+           leaderboardContainer.scrollTop -= 20;
+         }
+        } 
+
+          if (currentTime - lastAxisMoveTime > AXIS_COOLDOWN) {
+            if (axisY < -0.5 && lastAxisYValue >= -0.5) {
+              moveNavUp();
+              lastAxisMoveTime = currentTime;
+            } else if (axisY > 0.5 && lastAxisYValue <= 0.5) {
+              moveNavDown();
+              lastAxisMoveTime = currentTime;
+            }
+          }
+          if (currentScreen === 'volume' && currentNavIndex < 2) {
+            if (currentTime - lastSliderMoveTime > SLIDER_COOLDOWN) {
+              if (axisX < -0.5) {
+                adjustVolumeLeft();
+                lastSliderMoveTime = currentTime;
+              } else if (axisX > 0.5) {
+                adjustVolumeRight();
+                lastSliderMoveTime = currentTime;
+              }
+            }
+          }
+          lastAxisYValue = axisY;
+          lastAxisXValue = axisX;
+
+          const buttonA = gamepad.buttons[1];
+          if (buttonA.pressed && !lastButtonAState) {
+            selectCurrentNavItem();
+          }
+          lastButtonAState = buttonA.pressed;
+
+          const buttonB = gamepad.buttons[0];
+          if (buttonB.pressed && !lastButtonBState) {
+            if (currentScreen === 'main') {
+              exitGame();
+            } else if (currentScreen === 'volume' || currentScreen === 'controller') {
+              backToOptionsMenu();
+            } else {
+              backToMenu();
+            }
+          }
+          lastButtonBState = buttonB.pressed;
+        }
+      }
+      gamepadAnimationFrame = requestAnimationFrame(pollGamepad);
+    }
+    
+    function startGamepadPolling() {
+      if (!gamepadAnimationFrame) pollGamepad();
+    }
+    
+    function stopGamepadPolling() {
+      if (gamepadAnimationFrame) {
+        cancelAnimationFrame(gamepadAnimationFrame);
+        gamepadAnimationFrame = null;
+      }
+    }
+    
+    function hideAllScreens() {
+      document.getElementById('mainScreen').style.display = 'none';
+      document.getElementById('leaderboardScreen').classList.remove('active');
+      document.getElementById('optionsMenuScreen').classList.remove('active');
+      document.getElementById('volumeScreen').classList.remove('active');
+      document.getElementById('controllerScreen').classList.remove('active');
+      document.getElementById('gameScreen').classList.remove('active');
+    }
+    
+    function showMainMenu() {
+      hideAllScreens();
+      document.getElementById('mainScreen').style.display = 'block';
+      currentScreen = 'main';
+      initializeNavigation();
+      startGamepadPolling();
+      setTimeout(() => { startBackgroundMusic(); }, 100);
+    }
+    
+    function backToMenu() {
+      gameRunning = false;
+      clearInterval(timerInterval);
+      fallingAnimals = [];
+      showMainMenu();
+    }
+    
+    function backToOptionsMenu() {
+      stopBackgroundMusic();
+      hideAllScreens();
+      document.getElementById('optionsMenuScreen').classList.add('active');
+      currentScreen = 'options';
+      initializeNavigation();
+    }
+    
+    function showLeaderboard() {
+      stopBackgroundMusic();
+      hideAllScreens();
+      document.getElementById('leaderboardScreen').classList.add('active');
+      currentScreen = 'leaderboard';
+      renderLeaderboard();
+      initializeNavigation();
+    }
+    
+    function renderLeaderboard() {
+      const leaderboardList = document.getElementById('leaderboardList');
+      leaderboardList.innerHTML = '';
+      
+      if (leaderboardData.length === 0) {
+        leaderboardList.innerHTML = '<div style="text-align: center; padding: 20px; opacity: 0.7;">No scores yet! Be the first to play!</div>';
+        return;
+      }
+      
+      leaderboardData.sort((a, b) => b.score - a.score);
+      leaderboardData.forEach((entry, index) => {
+        const rank = index + 1;
+        const rankClass = rank <= 3 ? `rank-${rank}` : '';
+        const emoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🎪';
+        const entryDiv = document.createElement('div');
+        entryDiv.className = `leaderboard-entry ${rankClass}`;
+        entryDiv.innerHTML = `
+          <div class="entry-rank">${emoji} #${rank}</div>
+          <div class="entry-name">${entry.name}</div>
+          <div class="entry-score">${entry.score} ⭐</div>
+        `;
+        leaderboardList.appendChild(entryDiv);
+      });
+    }
+    
+    function showOptionsMenu() {
+      stopBackgroundMusic();
+      hideAllScreens();
+      document.getElementById('optionsMenuScreen').classList.add('active');
+      currentScreen = 'options';
+      initializeNavigation();
+    }
+    
+    function showVolumeControl() {
+      hideAllScreens();
+      document.getElementById('volumeScreen').classList.add('active');
+      currentScreen = 'volume';
+      loadVolumeSettings();
+      initializeNavigation();
+    }
+    
+    function showControllerSelect() {
+      hideAllScreens();
+      document.getElementById('controllerScreen').classList.add('active');
+      currentScreen = 'controller';
+      loadControllerSettings();
+      initializeNavigation();
+    }
+    
+    function showCredits() {
+      showNotification('❤️ Credits', 'Made with ❤️\n\nGame Design: Circus Team\nMusic: Auto-generated\nController: Nintendo Switch USB Support');
+    }
+    
+    function exitGame() {
+      showNotification('👋 Thanks for Playing!', 'Catching Circus Animals 🎪\n\nSee you next time!');
+    }
+    
+    window.addEventListener('gamepadconnected', (e) => {
+      console.log('Gamepad connected:', e.gamepad);
+      checkGamepadConnection();
+    });
+    
+    window.addEventListener('gamepaddisconnected', (e) => {
+      console.log('Gamepad disconnected:', e.gamepad);
+      checkGamepadConnection();
+    });
+    
+    document.addEventListener('keydown', (e) => {
+      if (isNotificationActive) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          closeNotification();
+          playClickSound();
+        }
+        return;
+      }
+      
+      if (currentScreen === 'game') {
+        if (e.key === 'ArrowLeft') keys.left = true;
+        if (e.key === 'ArrowRight') keys.right = true;
+        if (e.key === 'ArrowUp') keys.up = true;
+        if (e.key === 'ArrowDown') keys.down = true;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          backToMenu();
+        }
+      } else {
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+          e.preventDefault();
+          moveNavUp();
+        } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+          e.preventDefault();
+          moveNavDown();
+        } else if (e.key === 'ArrowLeft' && currentScreen === 'volume' && currentNavIndex < 2) {
+          e.preventDefault();
+          adjustVolumeLeft();
+        } else if (e.key === 'ArrowRight' && currentScreen === 'volume' && currentNavIndex < 2) {
+          e.preventDefault();
+          adjustVolumeRight();
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectCurrentNavItem();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          if (currentScreen === 'main') {
+            exitGame();
+          } else if (currentScreen === 'volume' || currentScreen === 'controller') {
+            backToOptionsMenu();
+          } else {
+            backToMenu();
+          }
+        }
+      }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+      if (currentScreen === 'game') {
+        if (e.key === 'ArrowLeft') keys.left = false;
+        if (e.key === 'ArrowRight') keys.right = false;
+        if (e.key === 'ArrowUp') keys.up = false;
+        if (e.key === 'ArrowDown') keys.down = false;
+      }
+    });
+    
+    window.onload = function() {
+      loadLeaderboard();
+      loadVolumeSettings();
+      loadControllerSettings();
+      initializeNavigation();
+      startGamepadPolling();
+      checkGamepadConnection();
+      setTimeout(() => {
+        if (currentScreen === 'main' && !musicStarted) {
+          startBackgroundMusic();
+        }
+      }, 500);
+    };
+  </script>
+</body>
+</html>
